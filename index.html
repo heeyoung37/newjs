@@ -3,301 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>여행 정산</title>
+  <title>여행 정산 (공유 버전)</title>
   <style>
-    :root { --bg:#0f172a; --panel:#111827; --muted:#6b7280; --txt:#e5e7eb; --accent:#22c55e; --danger:#ef4444; }
-    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Malgun Gothic,sans-serif}
-    body{margin:0;background:linear-gradient(120deg,#0b1022,#0f172a 60%);color:var(--txt)}
-    .wrap{max-width:1000px;margin:24px auto;padding:16px}
-    .card{background:rgba(17,24,39,.85);border:1px solid #1f2937;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.35);padding:16px}
-    h1{margin:0 0 8px;font-size:28px}
-    h2{margin:12px 0 8px;font-size:18px;color:#cbd5e1}
-    label{font-size:13px;color:#cbd5e1}
-    input,select,button,textarea{background:#0b1220;border:1px solid #253041;color:var(--txt);padding:10px;border-radius:10px}
-    input[type="number"]{text-align:right}
-    button{cursor:pointer}
-    button.primary{background:var(--accent);border-color:#16a34a;color:#04210f;font-weight:700}
-    button.ghost{background:transparent;border-color:#334155}
-    button.danger{background:var(--danger);border-color:#b91c1c;color:#200}
-    .grid{display:grid;gap:12px}
-    .g2{grid-template-columns:repeat(2,1fr)}
-    .g3{grid-template-columns:repeat(3,1fr)}
-    .g4{grid-template-columns:repeat(4,1fr)}
-    .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
-    .muted{color:var(--muted);font-size:12px}
-    .kpi{display:flex;gap:12px;flex-wrap:wrap}
-    .kpi > div{flex:1;min-width:180px;background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:12px}
-    .kpi strong{font-size:20px}
-    .group{margin:12px 0;border-left:3px solid #334155;padding-left:10px}
-    .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;background:#0b1220;border:1px solid #334155}
-    table{width:100%;border-collapse:collapse;margin-top:6px}
-    th,td{border-bottom:1px solid #1f2937;padding:8px;text-align:left}
-    th{color:#cbd5e1;font-weight:600}
+    body{font-family:sans-serif;background:#f9fafb;color:#111;margin:0;padding:20px}
+    h1{margin-bottom:10px}
+    label{display:block;margin-top:8px;font-size:14px}
+    input,select,button{padding:6px 10px;margin-top:4px}
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    th,td{border:1px solid #ddd;padding:6px;text-align:left}
+    th{background:#f1f5f9}
     .right{text-align:right}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .sep{height:1px;background:#1f2937;margin:14px 0}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>🧮 여행 정산</h1>
-      <p class="muted">GitHub Pages · Netlify에 올리기 쉬운 <b>순수 HTML/JS</b> 버전입니다. 데이터는 브라우저 <b>localStorage</b>에 저장됩니다.</p>
+  <h1>🧮 여행 정산 (Google Sheet 연동)</h1>
 
-      <h2>① 기본 설정</h2>
-      <div class="grid g4">
-        <div>
-          <label>인원수 (최대 10인)</label>
-          <select id="people"></select>
-        </div>
-        <div>
-          <label>숙박일수</label>
-          <select id="nights">
-            <option value="1">1박</option>
-            <option value="2">2박</option>
-            <option value="3">3박</option>
-          </select>
-        </div>
-        <div>
-          <label>여행 시작일</label>
-          <input id="tripStart" type="date" />
-        </div>
-        <div>
-          <label>여행 제목</label>
-          <input id="tripTitle" type="text" placeholder="예) 9월 제주 가족여행" />
-        </div>
-      </div>
+  <div>
+    <label>인원수</label>
+    <select id="people"></select>
 
-      <div class="sep"></div>
-      <h2>② 지출 항목 추가</h2>
-      <div class="row">
-        <div style="flex:1 1 140px">
-          <label>날짜</label>
-          <input id="date" type="date" />
-        </div>
-        <div style="flex:1 1 160px">
-          <label>장소</label>
-          <input id="place" type="text" placeholder="예) 서귀포, 광안리" />
-        </div>
-        <div style="flex:2 1 220px">
-          <label>내용</label>
-          <input id="desc" type="text" placeholder="예) 점심, 숙박, 주유" />
-        </div>
-        <div style="flex:1 1 140px">
-          <label>금액(원)</label>
-          <input id="amount" type="number" min="0" step="1" placeholder="0" />
-        </div>
-        <div style="flex:1 1 220px">
-          <label>비고</label>
-          <input id="note" type="text" placeholder="선결제/현금 등" />
-        </div>
-        <div>
-          <button class="primary" id="addBtn">항목 추가</button>
-        </div>
-      </div>
+    <label>숙박일수</label>
+    <select id="nights">
+      <option value="1">1박</option>
+      <option value="2">2박</option>
+      <option value="3">3박</option>
+    </select>
 
-      <div class="sep"></div>
-      <div class="kpi">
-        <div><div class="muted">총 지출</div><strong id="sumTotal">0</strong><div class="muted">원</div></div>
-        <div><div class="muted">1인당 부담</div><strong id="perHead">0</strong><div class="muted">원</div></div>
-        <div><div class="muted">항목 수</div><strong id="itemCount">0</strong><div class="muted">건</div></div>
-      </div>
-
-      <div class="sep"></div>
-      <div class="controls">
-        <button class="ghost" id="exportBtn">내보내기(JSON)</button>
-        <label class="pill" style="cursor:pointer">가져오기<input id="importFile" type="file" accept="application/json" style="display:none"></label>
-        <button class="danger" id="clearBtn">전체 초기화</button>
-        <span class="muted" id="saveHint">자동 저장됨</span>
-      </div>
-
-      <div class="sep"></div>
-      <h2>③ 내역</h2>
-      <div id="list"></div>
-    </div>
+    <label>여행 시작일</label>
+    <input id="tripStart" type="date" />
   </div>
 
+  <hr>
+
+  <h2>지출 항목 추가</h2>
+  <label>날짜 <input id="date" type="date"></label>
+  <label>장소 <input id="place" type="text"></label>
+  <label>내용 <input id="desc" type="text"></label>
+  <label>금액 <input id="amount" type="number"></label>
+  <label>비고 <input id="note" type="text"></label>
+  <button id="addBtn">추가</button>
+
+  <h2>내역</h2>
+  <table>
+    <thead>
+      <tr><th>날짜</th><th>장소</th><th>내용</th><th class="right">금액</th><th>비고</th></tr>
+    </thead>
+    <tbody id="list"></tbody>
+  </table>
+
 <script>
-const $ = (sel)=>document.querySelector(sel);
-const key = 'trip-settle-v1';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyZtdeXB3U_xd5pEEEyUwipXpQOZdHIiRyvso3n4NwpaL5u1EPVVGs-CaXQmWRYrwMoqQ/exec';
 
-const state = {
-  settings: { people: 2, nights: 1, tripStart: '', tripTitle: '' },
-  items: [] // {id,date,place,desc,amount,note}
-};
+// 드롭다운 인원수 옵션 생성
+const peopleSelect = document.querySelector('#people');
+peopleSelect.innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
 
-function load(){
-  const raw = localStorage.getItem(key);
-  if(!raw) return;
-  try{
-    const data = JSON.parse(raw);
-    if(data.settings) state.settings = data.settings;
-    if(Array.isArray(data.items)) state.items = data.items;
-  }catch(e){ console.warn('load error', e); }
+async function fetchItems(){
+  const res = await fetch(API_URL);
+  return await res.json();
 }
 
-function save(){
-  localStorage.setItem(key, JSON.stringify(state));
-}
-
-function formatMoney(n){
-  return Number(n||0).toLocaleString('ko-KR');
-}
-
-function initUI(){
-  // 드롭다운 옵션 동적 생성
-  $('#people').innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
-  // settings
-  $('#people').value = state.settings.people;
-  $('#nights').value = state.settings.nights;
-  $('#tripStart').value = state.settings.tripStart || '';
-  $('#tripTitle').value = state.settings.tripTitle || '';
-
-  ['people','nights','tripStart','tripTitle'].forEach(id=>{
-    $('#'+id).addEventListener('change',e=>{
-      const v = (id==='people'||id==='nights') ? Number(e.target.value) : e.target.value;
-      state.settings[id] = v; save(); render();
-    })
-  })
-
-  // default date
-  const today = new Date().toISOString().slice(0,10);
-  $('#date').value = today;
-
-  $('#addBtn').addEventListener('click', addItem);
-  $('#exportBtn').addEventListener('click', exportJSON);
-  $('#importFile').addEventListener('change', importJSON);
-  $('#clearBtn').addEventListener('click', clearAll);
-
-  render();
-}
-
-function addItem(){
-  const date = $('#date').value;
-  const place = $('#place').value.trim();
-  const desc = $('#desc').value.trim();
-  const amount = Number($('#amount').value||0);
-  const note = $('#note').value.trim();
-  if(!date || !desc || !amount){
-    alert('날짜, 내용, 금액은 필수입니다.');
-    return;
-  }
-  state.items.push({
-    id: crypto.randomUUID(),
-    date, place, desc, amount, note,
-    createdAt: Date.now()
+async function postItem(item){
+  await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(item)
   });
-  save();
-  // clear minimal
-  $('#desc').value=''; $('#amount').value=''; $('#note').value='';
-  render();
 }
 
-function deleteItem(id){
-  state.items = state.items.filter(it=>it.id!==id);
-  save(); render();
+function formatMoney(n){ return Number(n||0).toLocaleString('ko-KR'); }
+
+async function render(){
+  const items = await fetchItems();
+  const tbody = document.querySelector('#list');
+  if(!items.length){ tbody.innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>'; return; }
+  tbody.innerHTML = items.map(r=>`
+    <tr>
+      <td>${r.date}</td>
+      <td>${r.place||''}</td>
+      <td>${r.desc}</td>
+      <td class="right">${formatMoney(r.amount)}</td>
+      <td>${r.note||''}</td>
+    </tr>`).join('');
 }
 
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const title = state.settings.tripTitle || 'trip';
-  a.href = url; a.download = `${title}-정산.json`;
-  a.click(); URL.revokeObjectURL(url);
+async function addItem(){
+  const date = document.querySelector('#date').value;
+  const place = document.querySelector('#place').value;
+  const desc = document.querySelector('#desc').value;
+  const amount = Number(document.querySelector('#amount').value||0);
+  const note = document.querySelector('#note').value;
+  if(!date || !desc || !amount){ alert('날짜/내용/금액 필수'); return; }
+  await postItem({date, place, desc, amount, note});
+  document.querySelector('#desc').value='';
+  document.querySelector('#amount').value='';
+  document.querySelector('#note').value='';
+  await render();
 }
 
-function importJSON(e){
-  const file = e.target.files?.[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{ const data = JSON.parse(reader.result);
-      if(data.settings) state.settings = data.settings;
-      if(Array.isArray(data.items)) state.items = data.items;
-      save(); render();
-    }catch(err){ alert('JSON 형식이 올바르지 않습니다.'); }
-  };
-  reader.readAsText(file);
-}
+document.querySelector('#addBtn').addEventListener('click', addItem);
 
-function clearAll(){
-  if(!confirm('모든 데이터가 삭제됩니다. 계속할까요?')) return;
-  state.settings = { people: 2, nights: 1, tripStart: '', tripTitle: '' };
-  state.items = [];
-  save(); render();
-}
-
-function groupByDatePlace(items){
-  const map = new Map();
-  items.forEach(it=>{
-    const key = `${it.date}__${it.place||''}`;
-    if(!map.has(key)) map.set(key, { date: it.date, place: it.place||'', rows: [], sum:0 });
-    const g = map.get(key);
-    g.rows.push(it); g.sum += it.amount;
-  });
-  // sort by date asc, then createdAt
-  return Array.from(map.values()).sort((a,b)=> a.date.localeCompare(b.date));
-}
-
-function render(){
-  // KPIs
-  const people = Number(state.settings.people)||1;
-  const total = state.items.reduce((s,it)=>s+Number(it.amount||0),0);
-  $('#sumTotal').textContent = formatMoney(total);
-  $('#perHead').textContent = formatMoney(Math.round(total/people));
-  $('#itemCount').textContent = state.items.length;
-
-  // List
-  const groups = groupByDatePlace(state.items);
-  const $list = $('#list');
-  if(groups.length===0){ $list.innerHTML = '<p class="muted">아직 항목이 없습니다. 위에서 항목을 추가해 주세요.</p>'; return; }
-
-  $list.innerHTML = groups.map(g=>{
-    const header = `
-      <div class="group">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div>
-            <span class="pill">📅 ${g.date}</span>
-            ${g.place?`<span class="pill">📍 ${g.place}</span>`:''}
-          </div>
-          <div class="pill">그룹 합계: <b>${formatMoney(g.sum)}</b>원 · 1인 <b>${formatMoney(Math.round(g.sum/people))}</b>원</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:38%">내용</th>
-              <th class="right" style="width:14%">금액</th>
-              <th class="right" style="width:14%">1인 정산</th>
-              <th style="width:24%">비고</th>
-              <th style="width:10%"></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${g.rows.map(r=>`
-              <tr>
-                <td>${escapeHtml(r.desc)}</td>
-                <td class="right">${formatMoney(r.amount)}</td>
-                <td class="right">${formatMoney(Math.round(r.amount/people))}</td>
-                <td>${escapeHtml(r.note||'')}</td>
-                <td><button class="ghost" onclick="deleteItem('${r.id}')">삭제</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>`;
-    return header;
-  }).join('');
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, (c)=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'
-  })[c]);
-}
-
-// Boot
-load();
-window.addEventListener('DOMContentLoaded', initUI);
+render();
 </script>
 </body>
 </html>
