@@ -1,107 +1,292 @@
-<!-- 요약: API URL는 본인 웹앱 URL, addItem 검증완화, 오류표시 강화 -->
-<!-- (이미 URL 주신 그대로 사용) -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>여행 정산 · 다크테마 + 구글시트 연동</title>
+  <style>
+    :root{--bg:#0b1022;--panel:#0f172a;--ink:#e5e7eb;--muted:#98a2b3;--line:#1f2937;--accent:#22c55e;--danger:#ef4444;--focus:#38bdf8}
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Malgun Gothic,sans-serif}
+    body{margin:0;background:linear-gradient(120deg,#0b1022,#0f172a 60%);color:var(--ink)}
+    a{color:var(--focus)}
+    .wrap{max-width:1100px;margin:28px auto;padding:16px}
+    .card{background:rgba(15,23,42,.92);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 35px rgba(0,0,0,.35);padding:18px}
+    h1{margin:0 0 4px;font-size:28px}
+    h2{margin:16px 0 8px;font-size:18px;color:#cbd5e1}
+    .muted{color:var(--muted);font-size:13px}
+    .grid{display:grid;gap:12px}
+    .g2{grid-template-columns:repeat(2,1fr)}
+    .g3{grid-template-columns:repeat(3,1fr)}
+    .g4{grid-template-columns:repeat(4,1fr)}
+    label{font-size:12px;color:#cbd5e1;margin-bottom:6px;display:block}
+    input,select,button{background:#0b1220;border:1px solid #253041;color:var(--ink);padding:10px;border-radius:12px}
+    input[type="number"]{text-align:right}
+    input:focus,select:focus,button:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(56,189,248,.2)}
+    button{cursor:pointer}
+    .btn{height:40px;padding:0 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
+    .btn.primary{background:var(--accent);border-color:#16a34a;color:#03210e;font-weight:700}
+    .btn.ghost{background:transparent;border-color:#334155}
+    .btn.danger{background:var(--danger);border-color:#b91c1c;color:#200}
+    .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .kpi>div{background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:12px}
+    .kpi strong{font-size:20px}
+    .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;background:#0b1220;border:1px solid #334155}
+    .sep{height:1px;background:#1f2937;margin:14px 0}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border-bottom:1px solid #1f2937;padding:8px;text-align:left}
+    th{color:#cbd5e1;font-weight:600;position:sticky;top:0;background:rgba(15,23,42,.98)}
+    .right{text-align:right}
+    .group{margin:12px 0;border-left:3px solid #334155;padding-left:10px}
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .status{min-height:20px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>🧮 여행 정산</h1>
+      <div class="muted">다크 테마·카드형 UI를 유지하면서 <b>Google 스프레드시트</b>에 데이터를 저장/공유합니다. (URL만 알면 모두가 같은 데이터 보기/추가 가능)</div>
+
+      <h2>① 기본 설정</h2>
+      <div class="grid g4">
+        <div>
+          <label>인원수 (최대 10)</label>
+          <select id="people"></select>
+        </div>
+        <div>
+          <label>숙박일수</label>
+          <select id="nights">
+            <option value="1">1박</option>
+            <option value="2">2박</option>
+            <option value="3">3박</option>
+          </select>
+        </div>
+        <div>
+          <label>여행 시작일</label>
+          <input id="tripStart" type="date" />
+        </div>
+        <div>
+          <label>여행 제목</label>
+          <input id="tripTitle" type="text" placeholder="예) 9월 제주 가족여행" />
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <h2>② 지출 항목 추가</h2>
+      <div class="grid g4">
+        <div>
+          <label>날짜</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label>장소</label>
+          <input id="place" type="text" placeholder="예) 서귀포, 광안리" />
+        </div>
+        <div>
+          <label>내용</label>
+          <input id="desc" type="text" placeholder="예) 점심, 숙박, 주유" />
+        </div>
+        <div>
+          <label>금액(원)</label>
+          <input id="amount" type="number" min="0" step="1" placeholder="0" />
+        </div>
+        <div class="g4" style="grid-column:1/-1">
+          <label>비고</label>
+          <div class="toolbar">
+            <input id="note" type="text" placeholder="선결제/현금 등" style="flex:1" />
+            <button class="btn primary" id="addBtn">항목 추가</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="kpi">
+        <div><div class="muted">총 지출</div><strong id="sumTotal">0</strong><div class="muted">원</div></div>
+        <div><div class="muted">1인당 부담</div><strong id="perHead">0</strong><div class="muted">원</div></div>
+        <div><div class="muted">항목 수</div><strong id="itemCount">0</strong><div class="muted">건</div></div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="toolbar">
+        <input id="filterText" type="text" placeholder="내용/장소 검색" style="flex:1" />
+        <button class="btn ghost" id="refreshBtn">새로고침</button>
+        <span class="muted status" id="status"></span>
+      </div>
+
+      <div class="sep"></div>
+      <h2>③ 내역</h2>
+      <div id="list"></div>
+    </div>
+  </div>
+
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxLwAxMr4lOjmIYUa7st9wJdHqEXJQV8K_mmf1mdS-SeHZt5To2Bx_sfkfRMOf2vx7xPA/exec';
+// ====== 설정 (본인 Apps Script 웹앱 URL) ======
+const API_URL = 'https://script.google.com/macros/s/AKfycbyZtdeXB3U_xd5pEEEyUwipXpQOZdHIiRyvso3n4NwpaL5u1EPVVGs-CaXQmWRYrwMoqQ/exec';
+// const WRITE_TOKEN = '선택: 토큰 보호시 여기에';
 
-const $ = (s)=>document.querySelector(s);
+// ====== 도우미 ======
+const $ = (sel)=>document.querySelector(sel);
+const state = {
+  settings: { people: 2, nights: 1, tripStart: '', tripTitle: '' },
+  items: [],
+  filtered: []
+};
+function money(n){ return Number(n||0).toLocaleString('ko-KR'); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c])); }
+function setStatus(msg){ $('#status').textContent = msg||''; }
 
-// 인원수 옵션
-const peopleSelect = $('#people');
-if (peopleSelect) {
-  peopleSelect.innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
-}
-
-// 기본 날짜
-const today = new Date().toISOString().slice(0,10);
-const dateInput = $('#date');
-if (dateInput) dateInput.value = today;
-
-function formatMoney(n){ return Number(n||0).toLocaleString('ko-KR'); }
-
+// ====== 서버 통신 ======
 async function fetchItems(){
+  setStatus('불러오는 중…');
   try{
     const res = await fetch(API_URL, { method:'GET' });
-    if(!res.ok) throw new Error(`GET ${res.status} ${res.statusText}`);
-    return await res.json();
+    if(!res.ok) throw new Error(`GET ${res.status}`);
+    const data = await res.json();
+    setStatus('');
+    return Array.isArray(data)? data: [];
   }catch(err){
-    console.error('[fetchItems] 실패:', err);
-    alert('목록 불러오기 실패: ' + err.message);
+    console.error('[fetchItems] 실패', err);
+    alert('목록 불러오기 실패: '+err.message);
+    setStatus('오류');
     return [];
   }
 }
 
 async function postItem(item){
+  setStatus('저장 중…');
   try{
+    const payload = { ...item /*, token: WRITE_TOKEN*/ };
     const res = await fetch(API_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(item)
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
-    // Apps Script가 JSON 반환 안해도 OK로 간주
-    if(!res.ok){
-      const text = await res.text();
-      throw new Error(`POST ${res.status}: ${text}`);
-    }
-    // 가능하면 응답 JSON 파싱
-    try { 
-      const data = await res.json(); 
-      if(data && data.error) throw new Error(data.error);
-    } catch(_) { /* 응답이 비JSON이어도 무시 */ }
+    if(!res.ok){ const t = await res.text(); throw new Error(`POST ${res.status}: ${t}`); }
+    setStatus('저장 완료');
   }catch(err){
-    console.error('[postItem] 실패:', err);
+    console.error('[postItem] 실패', err);
+    setStatus('오류');
     throw err;
   }
 }
 
-async function render(){
-  const items = await fetchItems();
-  const tbody = $('#list');
-  if(!tbody) return;
-  if(!items.length){
-    tbody.innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>';
-    return;
-  }
-  tbody.innerHTML = items.map(r=>`
-    <tr>
-      <td>${r.date||''}</td>
-      <td>${r.place||''}</td>
-      <td>${r.desc||''}</td>
-      <td class="right">${formatMoney(r.amount)}</td>
-      <td>${r.note||''}</td>
-    </tr>
+// ====== 렌더링 ======
+function groupByDatePlace(items){
+  const map = new Map();
+  items.forEach(it=>{
+    const key = `${it.date||''}__${it.place||''}`;
+    if(!map.has(key)) map.set(key, { date: it.date||'', place: it.place||'', rows: [], sum:0 });
+    const g = map.get(key); g.rows.push(it); g.sum += Number(it.amount||0);
+  });
+  return Array.from(map.values()).sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+}
+
+function renderKPIs(){
+  const people = Number(state.settings.people)||1;
+  const total = state.filtered.reduce((s,it)=> s + Number(it.amount||0), 0);
+  $('#sumTotal').textContent = money(total);
+  $('#perHead').textContent = money(Math.round(total/people));
+  $('#itemCount').textContent = state.filtered.length;
+}
+
+function renderList(){
+  const groups = groupByDatePlace(state.filtered);
+  const $list = $('#list');
+  if(groups.length===0){ $list.innerHTML = '<p class="muted">조건에 맞는 항목이 없습니다.</p>'; return; }
+  $list.innerHTML = groups.map(g=>`
+    <div class="group">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <span class="pill">📅 ${escapeHtml(g.date)}</span>
+          ${g.place?`<span class="pill">📍 ${escapeHtml(g.place)}</span>`:''}
+        </div>
+        <div class="pill">그룹 합계: <b>${money(g.sum)}</b>원 · 1인 <b>${money(Math.round(g.sum/Number(state.settings.people||1)))}</b>원</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th style="width:40%">내용</th>
+          <th class="right" style="width:15%">금액</th>
+          <th class="right" style="width:15%">1인 정산</th>
+          <th style="width:25%">비고</th>
+        </tr></thead>
+        <tbody>
+          ${g.rows.map(r=>`
+            <tr>
+              <td>${escapeHtml(r.desc)}</td>
+              <td class="right">${money(r.amount)}</td>
+              <td class="right">${money(Math.round(Number(r.amount||0)/Number(state.settings.people||1)))}</td>
+              <td>${escapeHtml(r.note)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
   `).join('');
 }
 
-async function addItem(){
-  const date = $('#date')?.value;
-  const place = $('#place')?.value?.trim() || '';
-  const desc = $('#desc')?.value?.trim();
-  const amountRaw = $('#amount')?.value;
-  const note = $('#note')?.value?.trim() || '';
+function applyFilter(){
+  const q = ($('#filterText').value||'').trim().toLowerCase();
+  state.filtered = !q ? [...state.items] : state.items.filter(it=>{
+    return (it.desc||'').toLowerCase().includes(q) || (it.place||'').toLowerCase().includes(q);
+  });
+  renderKPIs();
+  renderList();
+}
 
-  // 검증: 날짜/내용/금액(숫자) — 0원도 허용
-  if(!date || !desc){
-    alert('날짜와 내용을 입력해 주세요.');
-    return;
-  }
+// ====== 이벤트 & 초기화 ======
+function initUI(){
+  // 인원수 옵션
+  $('#people').innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
+
+  // 기본 날짜
+  const today = new Date().toISOString().slice(0,10);
+  $('#date').value = today;
+
+  // 설정 변화 저장(로컬 설정만 저장)
+  ['people','nights','tripStart','tripTitle'].forEach(id=>{
+    $('#'+id).addEventListener('change', e=>{
+      const v = (id==='people'||id==='nights') ? Number(e.target.value) : e.target.value;
+      state.settings[id] = v; renderKPIs(); renderList();
+    });
+  });
+
+  // 버튼들
+  $('#addBtn').addEventListener('click', onAdd);
+  $('#refreshBtn').addEventListener('click', refreshFromServer);
+  $('#filterText').addEventListener('input', applyFilter);
+}
+
+async function refreshFromServer(){
+  const data = await fetchItems();
+  state.items = data; state.filtered = [...data];
+  applyFilter();
+}
+
+async function onAdd(){
+  const date = $('#date').value;
+  const place = $('#place').value.trim();
+  const desc = $('#desc').value.trim();
+  const amountRaw = $('#amount').value;
+  const note = $('#note').value.trim();
+
+  if(!date || !desc){ alert('날짜와 내용을 입력해 주세요.'); return; }
   const amount = Number(amountRaw);
-  if(isNaN(amount)){
-    alert('금액에 숫자를 입력해 주세요.');
-    return;
-  }
+  if(isNaN(amount)){ alert('금액은 숫자로 입력해 주세요.'); return; }
 
   try{
     await postItem({ date, place, desc, amount, note });
-    // 입력창 초기화
+    // 입력창 일부 초기화
     $('#desc').value=''; $('#amount').value=''; $('#note').value='';
-    await render();
+    await refreshFromServer();
   }catch(err){
-    alert('추가 실패: ' + err.message + '\n콘솔(F12)에서 상세 오류를 확인하세요.');
+    alert('추가 실패: '+err.message+'\nApps Script 배포 권한과 시트 탭 이름을 확인하세요.');
   }
 }
 
-$('#addBtn')?.addEventListener('click', addItem);
-
-// 첫 렌더
-render();
+// 부팅
+window.addEventListener('DOMContentLoaded', async ()=>{
+  initUI();
+  await refreshFromServer();
+});
 </script>
+</body>
+</html>
