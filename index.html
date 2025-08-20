@@ -1,109 +1,107 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>여행 정산 (공유 버전)</title>
-  <style>
-    body{font-family:sans-serif;background:#f9fafb;color:#111;margin:0;padding:20px}
-    h1{margin-bottom:10px}
-    label{display:block;margin-top:8px;font-size:14px}
-    input,select,button{padding:6px 10px;margin-top:4px}
-    table{width:100%;border-collapse:collapse;margin-top:20px}
-    th,td{border:1px solid #ddd;padding:6px;text-align:left}
-    th{background:#f1f5f9}
-    .right{text-align:right}
-  </style>
-</head>
-<body>
-  <h1>🧮 여행 정산 (Google Sheet 연동)</h1>
-
-  <div>
-    <label>인원수</label>
-    <select id="people"></select>
-
-    <label>숙박일수</label>
-    <select id="nights">
-      <option value="1">1박</option>
-      <option value="2">2박</option>
-      <option value="3">3박</option>
-    </select>
-
-    <label>여행 시작일</label>
-    <input id="tripStart" type="date" />
-  </div>
-
-  <hr>
-
-  <h2>지출 항목 추가</h2>
-  <label>날짜 <input id="date" type="date"></label>
-  <label>장소 <input id="place" type="text"></label>
-  <label>내용 <input id="desc" type="text"></label>
-  <label>금액 <input id="amount" type="number"></label>
-  <label>비고 <input id="note" type="text"></label>
-  <button id="addBtn">추가</button>
-
-  <h2>내역</h2>
-  <table>
-    <thead>
-      <tr><th>날짜</th><th>장소</th><th>내용</th><th class="right">금액</th><th>비고</th></tr>
-    </thead>
-    <tbody id="list"></tbody>
-  </table>
-
+<!-- 요약: API URL는 본인 웹앱 URL, addItem 검증완화, 오류표시 강화 -->
+<!-- (이미 URL 주신 그대로 사용) -->
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyZtdeXB3U_xd5pEEEyUwipXpQOZdHIiRyvso3n4NwpaL5u1EPVVGs-CaXQmWRYrwMoqQ/exec';
 
-// 드롭다운 인원수 옵션 생성
-const peopleSelect = document.querySelector('#people');
-peopleSelect.innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
+const $ = (s)=>document.querySelector(s);
 
-async function fetchItems(){
-  const res = await fetch(API_URL);
-  return await res.json();
+// 인원수 옵션
+const peopleSelect = $('#people');
+if (peopleSelect) {
+  peopleSelect.innerHTML = Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}명</option>`).join('');
 }
 
-async function postItem(item){
-  await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(item)
-  });
-}
+// 기본 날짜
+const today = new Date().toISOString().slice(0,10);
+const dateInput = $('#date');
+if (dateInput) dateInput.value = today;
 
 function formatMoney(n){ return Number(n||0).toLocaleString('ko-KR'); }
 
+async function fetchItems(){
+  try{
+    const res = await fetch(API_URL, { method:'GET' });
+    if(!res.ok) throw new Error(`GET ${res.status} ${res.statusText}`);
+    return await res.json();
+  }catch(err){
+    console.error('[fetchItems] 실패:', err);
+    alert('목록 불러오기 실패: ' + err.message);
+    return [];
+  }
+}
+
+async function postItem(item){
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(item)
+    });
+    // Apps Script가 JSON 반환 안해도 OK로 간주
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(`POST ${res.status}: ${text}`);
+    }
+    // 가능하면 응답 JSON 파싱
+    try { 
+      const data = await res.json(); 
+      if(data && data.error) throw new Error(data.error);
+    } catch(_) { /* 응답이 비JSON이어도 무시 */ }
+  }catch(err){
+    console.error('[postItem] 실패:', err);
+    throw err;
+  }
+}
+
 async function render(){
   const items = await fetchItems();
-  const tbody = document.querySelector('#list');
-  if(!items.length){ tbody.innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>'; return; }
+  const tbody = $('#list');
+  if(!tbody) return;
+  if(!items.length){
+    tbody.innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>';
+    return;
+  }
   tbody.innerHTML = items.map(r=>`
     <tr>
-      <td>${r.date}</td>
+      <td>${r.date||''}</td>
       <td>${r.place||''}</td>
-      <td>${r.desc}</td>
+      <td>${r.desc||''}</td>
       <td class="right">${formatMoney(r.amount)}</td>
       <td>${r.note||''}</td>
-    </tr>`).join('');
+    </tr>
+  `).join('');
 }
 
 async function addItem(){
-  const date = document.querySelector('#date').value;
-  const place = document.querySelector('#place').value;
-  const desc = document.querySelector('#desc').value;
-  const amount = Number(document.querySelector('#amount').value||0);
-  const note = document.querySelector('#note').value;
-  if(!date || !desc || !amount){ alert('날짜/내용/금액 필수'); return; }
-  await postItem({date, place, desc, amount, note});
-  document.querySelector('#desc').value='';
-  document.querySelector('#amount').value='';
-  document.querySelector('#note').value='';
-  await render();
+  const date = $('#date')?.value;
+  const place = $('#place')?.value?.trim() || '';
+  const desc = $('#desc')?.value?.trim();
+  const amountRaw = $('#amount')?.value;
+  const note = $('#note')?.value?.trim() || '';
+
+  // 검증: 날짜/내용/금액(숫자) — 0원도 허용
+  if(!date || !desc){
+    alert('날짜와 내용을 입력해 주세요.');
+    return;
+  }
+  const amount = Number(amountRaw);
+  if(isNaN(amount)){
+    alert('금액에 숫자를 입력해 주세요.');
+    return;
+  }
+
+  try{
+    await postItem({ date, place, desc, amount, note });
+    // 입력창 초기화
+    $('#desc').value=''; $('#amount').value=''; $('#note').value='';
+    await render();
+  }catch(err){
+    alert('추가 실패: ' + err.message + '\n콘솔(F12)에서 상세 오류를 확인하세요.');
+  }
 }
 
-document.querySelector('#addBtn').addEventListener('click', addItem);
+$('#addBtn')?.addEventListener('click', addItem);
 
+// 첫 렌더
 render();
 </script>
-</body>
-</html>
