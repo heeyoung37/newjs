@@ -152,15 +152,19 @@ async function fetchItems(){
     return [];
   }
 }
-
 async function postItem(item){
   setStatus('저장 중…');
   try{
-    const payload = { ...item /*, token: WRITE_TOKEN*/ };
+    // ⚠️ 포인트: JSON이지만 Content-Type을 text/plain으로!
     const res = await fetch(API_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(item)   // 서버에서 JSON.parse(e.postData.contents)로 읽음
     });
-    if(!res.ok){ const t = await res.text(); throw new Error(`POST ${res.status}: ${t}`); }
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error(`POST ${res.status}: ${t}`);
+    }
     setStatus('저장 완료');
   }catch(err){
     console.error('[postItem] 실패', err);
